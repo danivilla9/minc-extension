@@ -39,7 +39,7 @@
     "build": "vite build",
     "test": "vitest run --coverage",
     "test:watch": "vitest watch --coverage",
-    "test:e2e:setup": "xvfb-maybe --auto-servernum --server-args='-screen 0 1280x960x24' --",
+    "test:e2e:setup": "playwright install chromium && xvfb-maybe --auto-servernum --server-args='-screen 0 1280x960x24' --",
     "test:e2e": "npm run test:e2e:setup npx playwright test tests/src",
     "format:check": "biome format",
     "format:fix": "biome format --write",
