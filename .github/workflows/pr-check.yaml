@@ -152,10 +152,6 @@ jobs:
         working-directory: ./minc-extension
         run: |
           pnpm add -D @podman-desktop/tests-playwright@next
-
-      - name: Execute pnpm in MINC Extension
-        working-directory: ./minc-extension
-        run: pnpm install --no-frozen-lockfile
       
       - name: Build MINC extension from container file
         working-directory: ./minc-extension
