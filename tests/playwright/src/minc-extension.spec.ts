@@ -49,7 +49,7 @@ const imageName = 'ghcr.io/minc-org/minc-extension:latest';
 const extensionLabelMinc = 'minc-org.minc'; //region card
 const extensionLabelNameMinc = 'minc'; //details button
 const extensionLabelResourcesMinc = 'microshift'; //resource connection card
-const skipInstallation = process.env.SKIP_INSTALLATION ?? false;
+const skipInstallation = process.env.SKIP_INSTALLATION === 'true';
 const MINC_CLUSTER_CREATION_TIMEOUT = 300_000;
 const IMAGE_NAME = 'quay.io/fedora/httpd-24';
 const TAG = 'latest';
@@ -67,7 +67,10 @@ test.beforeAll(async ({ runner, page, welcomePage }) => {
   await welcomePage.handleWelcomePage(true);
   extensionCard = new ExtensionCardPage(page, extensionLabelNameMinc, extensionLabelMinc);
   mincResourcesCard = new ResourceConnectionCardPage(page, extensionLabelResourcesMinc);
-  await waitForPodmanMachineStartup(page);
+  // Cluster workflow is skipped on CI, so a running Podman machine is not needed.
+  if (!isCI) {
+    await waitForPodmanMachineStartup(page);
+  }
 });
 
 test.afterAll(async ({ page, runner }) => {
@@ -95,7 +98,7 @@ test.describe
 
         // we want to skip removing of the extension when we are running tests from PR check
         test('Uninstall previous version of minc extension', async ({ navigationBar }) => {
-          test.skip(!extensionInstalled || !!skipInstallation);
+          test.skip(!extensionInstalled || skipInstallation);
           test.setTimeout(60_000);
           await removeExtension(navigationBar);
         });
@@ -103,7 +106,7 @@ test.describe
         // we want to install extension from OCI image (usually using latest tag) after new code was added to the codebase
         // and extension was published already
         test('Extension can be installed using OCI image', async ({ navigationBar }) => {
-          test.skip(extensionInstalled); //!!skipInstallation?
+          test.skip(extensionInstalled || skipInstallation);
           test.setTimeout(200_000);
           const extensions = await navigationBar.openExtensions();
           await extensions.installExtensionFromOCIImage(imageName);

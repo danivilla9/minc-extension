@@ -45,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-2022, ubuntu-24.04, macos-15]
+        os: [windows-2022, ubuntu-24.04, macos-26]
     runs-on: ${{ matrix.os }}
     steps:
       # Checkout minc extension
@@ -88,7 +88,9 @@ jobs:
           Write-Host "Checking for and installing latest WSL kernel update..."
           wsl --update
 
+      # podman-install supports Linux/Windows only (no-op on macOS)
       - name: Update Podman
+        if: matrix.os != 'macos-26'
         uses: redhat-actions/podman-install@main
 
       - name: Revert unprivileged user namespace restrictions in Ubuntu 24.04
@@ -112,10 +114,21 @@ jobs:
         working-directory: ./minc-extension
         run: pnpm install --no-frozen-lockfile
 
+      # macOS cannot pull the OCI image (no podman machine); preload like CRC e2e
+      - name: Build and preload Minc extension locally (macOS)
+        if: matrix.os == 'macos-26'
+        working-directory: ./minc-extension
+        run: |
+          pnpm build
+          mkdir -p tests/playwright/output/minc-tests-pd/plugins/extension
+          cp -R package.json LICENSE icon.png README.md dist tests/playwright/output/minc-tests-pd/plugins/extension/
+
       - name: Run All E2E tests
         working-directory: ./minc-extension
         env:
           PODMAN_DESKTOP_ARGS: ${{ github.workspace }}/podman-desktop
+          # Preloaded locally on mac (no podman machine to pull OCI image)
+          SKIP_INSTALLATION: ${{ matrix.os == 'macos-26' && 'true' || '' }}
         run: pnpm test:e2e
 
       - name: Publish Test Report
@@ -133,4 +146,6 @@ jobs:
         if: always()
         with:
           name: e2e-tests-${{ matrix.os }}
-          path: ./**/tests/**/output/
+          path: |
+            ./**/tests/**/output/
+            ./**/tests/output/
