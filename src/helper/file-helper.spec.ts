@@ -198,7 +198,7 @@ describe('whereBinary', () => {
     );
   });
 
-  test('should return executable if not able to execute which', async () => {
+  test('should return executable if not able to execute where on windows', async () => {
     vi.mocked(env).isWindows = true;
     vi.mocked(podmanDesktopProcess.exec).mockRejectedValue(new Error('fake error executing which'));
 
@@ -209,6 +209,11 @@ describe('whereBinary', () => {
       ['minc.exe'],
       expect.objectContaining({ env: { PATH: expect.any(String) } }),
     );
+  });
+  test('should return executable if OS is unknown', async () => {
+    const computedPath = await fileHelper.whereBinary('minc');
+    expect(computedPath).toBe('minc');
+    expect(podmanDesktopProcess.exec).not.toHaveBeenCalled();
   });
 });
 
